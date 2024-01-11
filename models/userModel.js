@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
+const axios = require('axios');
 
 const Schema = mongoose.Schema;
 
@@ -27,7 +28,7 @@ const userSchema = new Schema({
 })
 
 // static signup method
-userSchema.statics.signup = async function(firstName, lastName, email, password) {
+userSchema.statics.signup = async function(firstName, lastName, email, password, recaptchaToken) {
 
     // validation
     if(!firstName || !lastName ||!email || !password){
@@ -39,6 +40,19 @@ userSchema.statics.signup = async function(firstName, lastName, email, password)
     if(!validator.isStrongPassword(password)){
         throw Error('Password is not strong enough!')
     }
+
+    // Verify the reCAPTCHA token
+    const response = await axios.post('https://www.google.com/recaptcha/api/siteverify', null, {
+        params: {
+            secret: '6LcOPU0pAAAAAIE7MC6BvB7B_dllkCpF5dCUX-Ui',
+            response: recaptchaToken
+        }
+    });
+
+    if (response.data.success !== true) {
+        throw Error('Failed reCAPTCHA verification');
+    }
+
     const exists = await this.findOne({email});
 
     if (exists) {

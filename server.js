@@ -1,15 +1,9 @@
-require('dotenv').config();
-
-const cors = require('cors');
-
-
 const express = require('express');
-
-const workoutRoutes = require('./routes/workouts');
-const userRoutes = require('./routes/user');
-
-
+const path = require('path');
 const mongoose = require('mongoose');
+const cors = require('cors');
+const workoutRoutes = require('./routes/workoutRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express(); // Create express app
 
@@ -28,18 +22,23 @@ app.use(cors());
 app.use('/api/workouts/', workoutRoutes)
 app.use('/api/user', userRoutes)
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'client/build')));
 
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
 
 //connect to db
-
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         //Listen for requests
-app.listen(process.env.PORT, () => {
-    console.log(`Connected to DB and listening on port ${process.env.PORT}`);
-});
+        app.listen(process.env.PORT, () => {
+            console.log(`Connected to DB and listening on port ${process.env.PORT}`);
+        });
     })
     .catch((error) => {
         console.log(error);
     })
-

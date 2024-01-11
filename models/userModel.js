@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const axios = require('axios');
+require('dotenv').config();
+
 
 const Schema = mongoose.Schema;
 
@@ -44,7 +46,7 @@ userSchema.statics.signup = async function(firstName, lastName, email, password,
     // Verify the reCAPTCHA token
     const response = await axios.post('https://www.google.com/recaptcha/api/siteverify', null, {
         params: {
-            secret: '6LcOPU0pAAAAAIE7MC6BvB7B_dllkCpF5dCUX-Ui',
+            secret: process.env.RECAPTCHA_SECRET_KEY,
             response: recaptchaToken
         }
     });

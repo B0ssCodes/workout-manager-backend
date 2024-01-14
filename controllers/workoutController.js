@@ -26,21 +26,36 @@ const getWorkout = async (req, res) => {
     res.status(200).json(workout);
 }
 
-//create a workout
 const createWorkout = async (req, res) => {
-    const {title, load, reps} = req.body;
+    const {title, exercises} = req.body;
 
     let emptyFields = [];
     
     if (!title){
         emptyFields.push('title');
     }
-    if (!load){
-        emptyFields.push('load');
+    if (!exercises || exercises.length === 0){
+        emptyFields.push('exercises');
+    } else {
+        exercises.forEach((exercise, index) => {
+            if (!exercise.title) {
+                emptyFields.push(`exercises[${index}].title`);
+            }
+            if (!exercise.sets || exercise.sets.length === 0) {
+                emptyFields.push(`exercises[${index}].sets`);
+            } else {
+                exercise.sets.forEach((set, setIndex) => {
+                    if (set.reps == null) {
+                        emptyFields.push(`exercises[${index}].sets[${setIndex}].reps`);
+                    }
+                    if (set.load == null) {
+                        emptyFields.push(`exercises[${index}].sets[${setIndex}].load`);
+                    }
+                });
+            }
+        });
     }
-    if (!reps){
-        emptyFields.push('reps');
-    }
+
     if(emptyFields.length > 0) {
         return res.status(400).json({ error: "Please fill in all the fields", emptyFields})
     }
@@ -48,13 +63,12 @@ const createWorkout = async (req, res) => {
     //add doc to db
     try{
         const user_id = req.user._id;
-        const workout = await Workout.create({title, load, reps, user_id});
-        res.status(200).json(workout);
-    } catch (error){
-        res.status(400).json({error: error.message});
+        const workout = await Workout.create({title, exercises, user_id});
+        res.status(201).json(workout);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to create workout", details: error});
     }
 }
-
 //delete a workout
 const deleteWorkout = async (req, res) => {
     const {id} = req.params;
@@ -71,13 +85,17 @@ const deleteWorkout = async (req, res) => {
 
     res.status(200).json(workout);
 }
-
 //update a workout
 const updateWorkout = async (req, res) => {
     const {id} = req.params;
 
     if(!mongoose.Types.ObjectId.isValid(id)){
         return res.status(404).json({error: 'No such workout'})
+    }
+
+    const {sets} = req.body;
+    if (sets && (!Array.isArray(sets) || sets.some(set => typeof set !== 'object' || !set.load || !set.reps))) {
+        return res.status(400).json({error: 'Invalid sets field'});
     }
 
     const workout = await Workout.findOneAndUpdate({_id: id}, {...req.body}, { new: true });    

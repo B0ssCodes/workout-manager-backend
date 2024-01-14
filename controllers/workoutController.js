@@ -44,14 +44,18 @@ const createWorkout = async (req, res) => {
             if (!exercise.sets || exercise.sets.length === 0) {
                 emptyFields.push(`exercises[${index}].sets`);
             } else {
-                exercise.sets.forEach((set, setIndex) => {
-                    if (set.reps == null) {
-                        emptyFields.push(`exercises[${index}].sets[${setIndex}].reps`);
-                    }
-                    if (set.load == null) {
-                        emptyFields.push(`exercises[${index}].sets[${setIndex}].load`);
-                    }
-                });
+                if (Array.isArray(exercise.sets)) {
+                    exercise.sets.forEach((set, setIndex) => {
+                        if (set.reps == null) {
+                            emptyFields.push(`exercises[${index}].sets[${setIndex}].reps`);
+                        }
+                        if (set.load == null) {
+                            emptyFields.push(`exercises[${index}].sets[${setIndex}].load`);
+                        }
+                    });
+                } else {
+                    emptyFields.push(`exercises[${index}].sets`);
+                }
             }
         });
     }
